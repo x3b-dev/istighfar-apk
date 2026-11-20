@@ -1,0 +1,141 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<link rel="stylesheet" href="common.css">
+<style>
+body{background:var(--qbg);color:var(--qfg)}
+.top .mid{flex:1;text-align:center;line-height:1.25}
+.top .mid b{display:block;font-family:var(--title);font-weight:400;font-size:20px;color:var(--goldt);word-spacing:.32em}
+html.en .top .mid b{font-family:var(--ui);font-weight:500;font-size:17px;word-spacing:0;color:var(--topfg)}
+.top .mid span{font-size:12px;font-weight:300;color:var(--mut)}
+#pg{position:absolute;top:calc(56px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px));right:0;left:0;padding:6px 10px;display:flex;flex-direction:column;touch-action:pan-y;direction:rtl}
+.ln{display:flex;direction:rtl;justify-content:space-between;align-items:center;white-space:nowrap;flex:1;min-height:0}
+.ln.c{justify-content:center;gap:.28em}
+.ln.h{justify-content:center}
+.w{color:var(--qfg);line-height:1}
+.ln.h .w{color:var(--qh)}
+.ln.m .w{display:inline-block}
+.bar{position:absolute;bottom:0;right:0;left:0;height:calc(58px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--top);box-shadow:0 -1px 0 var(--line);display:flex;align-items:stretch;direction:rtl}
+.bar button{flex:1;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mut)}
+.bar button.pri{color:var(--goldt)}
+html[dir=ltr] .bar{direction:ltr}
+html[dir=ltr] .bar .flip{transform:scaleX(-1)}
+#sheet{position:fixed;inset:0;background:var(--bg);z-index:15;display:none;color:var(--fg);direction:inherit}
+#sheet.show{display:flex;flex-direction:column}
+#sheet .top{position:relative;flex:none}
+.tabs{display:flex;gap:6px;padding:10px 12px 6px;flex:none}
+.tabs button{flex:1;padding:10px 4px;border-radius:12px;background:var(--chip);font-size:14px;font-weight:500;color:var(--fg)}
+.tabs button.on{background:var(--gold);color:#201505}
+#goto{display:flex;gap:8px;padding:6px 12px 8px;flex:none}
+#goto input{flex:1;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px;font-family:inherit;font-size:16px;text-align:center;user-select:text;-webkit-user-select:text}
+#goto button{padding:0 18px;border-radius:12px;background:var(--on);color:#fff;font-weight:500}
+#list{flex:1;min-height:0;overflow-y:auto;padding:0 12px 20px}
+.it{display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:1px solid var(--line)}
+.it .n{width:36px;height:36px;border-radius:11px;background:var(--chip);display:grid;place-items:center;font-size:13px;font-weight:500;color:var(--goldt)}
+.it .t{flex:1;font-family:var(--title);font-size:19px;word-spacing:.32em}
+html.en .it .t{font-family:var(--ui);font-size:16px;font-weight:500;word-spacing:0}
+.it .t small{display:block;font-family:var(--title);font-size:14px;color:var(--mut);word-spacing:.32em}
+.it .p{font-size:13px;color:var(--mut);font-weight:300}
+.it .x{padding:6px;color:var(--mut)}
+#err{position:absolute;inset:90px 20px auto 20px;color:#b33;text-align:center;display:none;line-height:1.8;direction:inherit}
+</style></head><body>
+<div class="top"><button class="ib" id="bBack"><span class="flip" data-ic="chevR"></span></button>
+ <div class="mid"><b id="sName">—</b><span id="sInfo"></span></div>
+ <button class="ib" id="bMark"></button></div>
+<div id="pg"></div>
+<div id="err"></div>
+<div class="bar">
+ <button id="bPrev"><span class="flip" data-ic="chevR"></span><span data-i="prev"></span></button>
+ <button id="bGo"><span data-ic="pin" data-is="22"></span><span data-i="resume"></span></button>
+ <button id="bIdx" class="pri"><span data-ic="list"></span><span data-i="index"></span></button>
+ <button id="bNext"><span class="flip" data-ic="chevL"></span><span data-i="nextP"></span></button>
+</div>
+<div id="sheet">
+ <div class="top"><button class="ib" id="sClose"><span class="flip" data-ic="chevR"></span></button><h1 data-i="index"></h1><span style="width:40px"></span></div>
+ <div class="tabs"><button data-t="s" class="on" data-i="tabS"></button><button data-t="j" data-i="tabJ"></button><button data-t="b" data-i="tabB"></button></div>
+ <div id="goto"><input id="gIn" type="number" inputmode="numeric" min="1" max="604" data-ia="placeholder:goPh"><button id="gBtn" data-i="go"></button></div>
+ <div id="list"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script><script src="core.js"></script>
+<script>
+var META=null,page=ls('qpage',1),marks=ls('qmarks',[]),loaded={},cur=0;
+var pg=$('pg');
+function fontFile(n){return 'quran/fonts/'+(n==='QCF4_QBSML'?n+'.woff2':n+'_W.woff2')}
+function loadFont(n){if(loaded[n])return loaded[n];
+  var f=new FontFace(n,"url('"+fontFile(n)+"')");
+  loaded[n]=f.load().then(function(ff){document.fonts.add(ff)});return loaded[n]}
+function juzOf(p){var j=1;for(var i=0;i<30;i++)if(META.juz[i]<=p)j=i+1;return j}
+function sname(id){var s=META.surahs[id-1];return LANG==='en'?SURAH_EN[id-1]:(s?s.name:'')}
+function show(p){
+  p=Math.max(1,Math.min(604,p|0));var my=++cur;
+  getJSON('quran/pages/'+('00'+p).slice(-3)+'.json',function(d){
+    if(my!==cur)return;
+    var fonts={};d.lines.forEach(function(l){l.words.forEach(function(w){fonts[w.font]=1})});
+    Promise.all(Object.keys(fonts).map(loadFont)).then(function(){if(my===cur)render(d,p)},
+      function(){err(t('fontFail'))});
+  },function(){err(t('pgFail'))});
+}
+function err(m){var e=$('err');e.textContent=m;e.style.display='block'}
+var lastData=null;
+function markIcon(){var on=marks.indexOf(page)>=0;$('bMark').innerHTML=ico('star',22);
+  $('bMark').firstChild.setAttribute('fill',on?'currentColor':'none');$('bMark').style.color=on?'var(--gold)':'var(--topfg)'}
+function render(d,p){
+  lastData=d;$('err').style.display='none';page=p;ss('qpage',p);
+  pg.innerHTML='';
+  var W=pg.clientWidth-20,H=pg.clientHeight-12,lh=H/15,short=(p===1||p===2);
+  var rows=[];
+  d.lines.forEach(function(l){
+    var row=document.createElement('div');row.className='ln';
+    var ty=l.words[0].type;if(ty==='surah_header'||ty==='bismillah')row.className+=' c h';
+    else if(short)row.className+=' c';
+    l.words.forEach(function(w){var s=document.createElement('span');s.className='w';
+      s.style.fontFamily="'"+w.font+"'";s.textContent=String.fromCharCode(w.code);
+      if(w.verse_key)s.dataset.v=w.verse_key;row.appendChild(s)});
+    rows.push(row);
+  });
+  if(d.lines.length<15){var pad=document.createElement('div');pad.style.flex=String(15-d.lines.length);pad.style.minHeight='0';pg.appendChild(pad)}
+  rows.forEach(function(r){pg.appendChild(r)});
+  var fs=40,maxw=0;
+  rows.forEach(function(r){r.style.fontSize='40px';r.classList.add('m')});
+  rows.forEach(function(r){if(r.className.indexOf(' h')<0){var w=0;[].forEach.call(r.children,function(c){w+=c.offsetWidth});if(w>maxw)maxw=w}});
+  rows.forEach(function(r){r.classList.remove('m')});
+  if(maxw>0)fs=40*W/maxw;
+  fs=Math.min(fs,lh*0.98);
+  rows.forEach(function(r){var isH=r.className.indexOf(' h')>=0;r.style.fontSize=(isH?Math.min(fs*1.15,lh*1.0):fs)+'px'});
+  pg.style.paddingInline=short?'8%':'10px';
+  head(d,p);markIcon();
+}
+function head(d,p){var s=d&&d.surahs&&d.surahs.length?d.surahs[0]:null;var id=s?s.id:1;
+  $('sName').textContent=t('sura')+' '+sname(id);
+  $('sInfo').textContent=t('juz')+' '+ar(juzOf(p))+' • '+t('page')+' '+ar(p)}
+function go(p){show(p)}
+$('bNext').onclick=function(){if(page<604)go(page+1)};
+$('bPrev').onclick=function(){if(page>1)go(page-1)};
+$('bGo').onclick=function(){var l=ls('qpage',1);go(l);toast(t('page')+' '+ar(l))};
+$('bBack').onclick=function(){if(!window.__back())location.href='index.html'};
+$('bMark').onclick=function(){var i=marks.indexOf(page);if(i>=0){marks.splice(i,1);toast(t('markOff'))}else{marks.push(page);toast(t('markOn')+ar(page))}
+  ss('qmarks',marks);markIcon()};
+var sx=0,sy=0;
+pg.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+pg.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx>0){if(page<604)go(page+1)}else if(page>1)go(page-1)}},{passive:true});
+var tab='s';
+function fillList(){var L=$('list'),h='';
+  if(tab==='s')META.surahs.forEach(function(s){h+='<div class="it" data-p="'+s.page+'"><div class="n">'+ar(s.id)+'</div><div class="t">'+(LANG==='en'?SURAH_EN[s.id-1]+'<small>'+s.name+'</small>':s.name)+'</div><div class="p">'+t('page')+' '+ar(s.page)+'</div></div>'});
+  else if(tab==='j')META.juz.forEach(function(p,i){h+='<div class="it" data-p="'+p+'"><div class="n">'+ar(i+1)+'</div><div class="t">'+t('juz')+' '+ar(i+1)+'</div><div class="p">'+t('page')+' '+ar(p)+'</div></div>'});
+  else{if(!marks.length)h='<div class="muted" style="padding:24px;text-align:center">'+t('noMarks')+'</div>';
+    marks.slice().sort(function(a,b){return a-b}).forEach(function(p){h+='<div class="it" data-p="'+p+'"><div class="n">'+ico('star',16)+'</div><div class="t">'+t('page')+' '+ar(p)+'</div><div class="p">'+t('juz')+' '+ar(juzOf(p))+'</div><button class="x" data-del="'+p+'">'+ico('trash',19)+'</button></div>'})}
+  L.innerHTML=h}
+$('list').addEventListener('click',function(e){var b=e.target.closest('[data-del]');
+  if(b){marks.splice(marks.indexOf(+b.getAttribute('data-del')),1);ss('qmarks',marks);fillList();return}
+  var it=e.target.closest('.it');if(it){openSheet(false);go(+it.getAttribute('data-p'))}});
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){tab=b.getAttribute('data-t');
+  document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});fillList()}});
+$('gBtn').onclick=function(){var v=parseInt($('gIn').value,10);if(v>=1&&v<=604){openSheet(false);go(v)}else toast(t('badNum'))};
+function openSheet(o){$('sheet').classList.toggle('show',o);if(o)fillList()}
+$('bIdx').onclick=function(){openSheet(true)};$('sClose').onclick=function(){openSheet(false)};
+window.__back=function(){if($('sheet').classList.contains('show')){openSheet(false);return true}return false};
+applyI18n();fillIcons();
+getJSON('quran/meta.json',function(m){META=m;var q=parseInt((location.search.match(/p=(\d+)/)||[])[1],10);show(q||page)},
+  function(){err(t('qFail'))});
+</script></body></html>
