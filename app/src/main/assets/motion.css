@@ -1,0 +1,23 @@
+/* motion system: press feedback 80-160ms, page transitions ~200-280ms (ease-out in, ease-in out) */
+:root{--e-out:cubic-bezier(.2,.8,.2,1);--e-in:cubic-bezier(.4,0,1,1)}
+html[dir=rtl]{--dx:-1}html[dir=ltr]{--dx:1}
+@keyframes pgF{from{opacity:0;transform:translateX(calc(var(--dx) * 28px))}to{opacity:1;transform:none}}
+@keyframes pgB{from{opacity:0;transform:translateX(calc(var(--dx) * -28px))}to{opacity:1;transform:none}}
+@keyframes pgOF{to{opacity:0;transform:translateX(calc(var(--dx) * -28px))}}
+@keyframes pgOB{to{opacity:0;transform:translateX(calc(var(--dx) * 28px))}}
+html.pg-in-f body{animation:pgF .28s var(--e-out) backwards}
+html.pg-in-b body{animation:pgB .28s var(--e-out) backwards}
+body.pg-out-f{animation:pgOF .19s var(--e-in) forwards}
+body.pg-out-b{animation:pgOB .19s var(--e-in) forwards}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.rise{opacity:0}
+.go .rise{opacity:1;animation:rise .5s var(--e-out) backwards;animation-delay:calc(var(--i,0) * 55ms)}
+/* press feedback */
+button,.tile,.row,.opt,.ib,.hero,#gear,#homeBtn,#pause,.seg button,.tabs button,.mb,.sw{transition:transform .16s var(--e-out),opacity .16s,background-color .2s,box-shadow .2s}
+button:active,.tile:active,.row:active,.opt:active,.ib:active,#gear:active,#homeBtn:active,#pause:active,.mb:active{transform:scale(.96);transition-duration:.07s}
+.hero:active,.tile.wide:active{transform:scale(.985);transition-duration:.07s}
+.row:active,.opt:active{transform:scale(.985)}
+/* sheets & modals: soft settle */
+.sx,#sheet{transition:transform .34s var(--e-out)}
+.modal .box{animation:rise .3s var(--e-out) backwards}
+@media (prefers-reduced-motion:reduce){html.pg-in-f body,html.pg-in-b body,body.pg-out-f,body.pg-out-b{animation:none!important}.go .rise{animation:none!important}}

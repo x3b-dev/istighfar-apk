@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="motion.css">
+<style>
+.next{text-align:center;padding:22px 16px;color:#fff;border:0;border-radius:28px;background:linear-gradient(150deg,#12606f,#0a3340)}
+html.dark .next{background:linear-gradient(150deg,#164a58,#0c2630)}
+.next .nm{font-family:var(--title);font-size:36px;word-spacing:.32em;color:#f6dc9c;line-height:1.5}
+html.en .next .nm{font-family:var(--ui);font-weight:500;font-size:30px;word-spacing:0}
+.next .cd{font-size:15px;font-weight:300;margin-top:2px;color:#e3eefb}
+.next .lb{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#cfe3f5;font-weight:300}
+.pt{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:14px}
+.pt+.pt{margin-top:2px}
+.pt .pi{width:38px;height:38px;border-radius:12px;background:var(--chip);display:grid;place-items:center;color:var(--gold)}
+.pt .n{flex:1;font-size:17px}
+.pt .tm{font-size:17px;font-weight:500;direction:ltr;min-width:96px;text-align:end}
+.pt.now{background:var(--hl)}
+.pt.now .pi{background:var(--gold);color:#201505}
+.pt.now .n{color:var(--goldt);font-weight:500}
+.bell{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--mut);opacity:.55}
+.bell.on{color:var(--gold);opacity:1;background:var(--hl)}
+</style></head><body>
+<div class="top"><button class="ib" id="bBack"><span class="flip" data-ic="chevR"></span></button><h1 data-i="prayer"></h1><span style="width:40px"></span></div>
+<div class="body">
+ <div class="card" id="locCard">
+  <h2><span data-ic="pin" data-is="20"></span><span data-i="locTitle"></span></h2>
+  <div class="muted" id="locTxt"></div>
+  <button class="btn gold" id="locBtn" style="margin-top:12px"></button>
+ </div>
+ <div id="main" style="display:none">
+  <div class="card next"><div class="lb"><span data-ic="compass" data-is="16"></span><span data-i="next"></span></div><div class="nm" id="nName">—</div><div class="cd" id="nCd"></div></div>
+  <div class="card"><h2><span data-ic="mosque" data-is="20"></span><span data-i="today"></span></h2><div id="times"></div>
+   <div class="muted" style="margin-top:8px;font-size:13px" data-i="bellHint"></div></div>
+  <div class="card"><h2><span data-ic="gear" data-is="20"></span><span data-i="calc"></span></h2>
+   <div class="row"><span data-i="method"></span><select id="method"></select></div>
+   <div class="row"><span data-i="asrM"></span><select id="asr"><option value="1" data-i="asr1"></option><option value="2" data-i="asr2"></option></select></div>
+   <div class="row" id="qRow"><span data-i="qibla"></span><b id="qb">—</b></div>
+   <div class="muted" style="margin-top:6px;font-size:13px" data-i="calcNote"></div>
+  </div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script><script src="core.js"></script>
+<script>
+var P=ls('pray',{});if(!P.alarms)P.alarms={};
+function save(){ss('pray',P);syncAlarms()}
+var ms=$('method');
+function fillMethods(){var v=ms.value||P.method||'mwl';ms.innerHTML='';for(var k in METHODS){var o=document.createElement('option');o.value=k;o.textContent=LANG==='en'?METH_EN[k]:METHODS[k].n;ms.appendChild(o)}ms.value=v}
+ms.onchange=function(){P=ls('pray',{});P.method=ms.value;save();draw()};
+$('asr').onchange=function(){P=ls('pray',{});P.asr=+$('asr').value;save();draw()};
+$('bBack').onclick=function(){nav('index.html',true)};
+$('locBtn').onclick=function(){$('locBtn').textContent=t('locBusy');
+  askLocation(function(o,e){if(o){toast(t('locSet'));draw();syncAlarms()}else{
+    $('locBtn').textContent=ls('pray',{}).loc?t('locUpd'):t('locOn');
+    toast(e==='denied'?t('locDenied'):(e==='off'?t('locOff'):t('locFail')))}})};
+var PI={fajr:'sunrise',sunrise:'sun',dhuhr:'sun',asr:'cloudsun',maghrib:'sunset',isha:'moon'};
+function draw(){P=ls('pray',{});if(!P.alarms)P.alarms={};
+  $('locBtn').textContent=P.loc?t('locUpd'):t('locOn');
+  if(!P.loc){$('locTxt').textContent=t('locHint');$('main').style.display='none';return}
+  $('main').style.display='block';
+  $('locTxt').textContent=placeName(P.loc);
+  var tm=dayTimes(new Date()),np=nextPrayer(),h='';
+  NAMES.forEach(function(n){var k=n[0],on=P.alarms[k]!==false&&k!=='sunrise';
+    h+='<div class="pt'+(np&&np.key===k?' now':'')+'"><span class="pi">'+ico(PI[k],20)+'</span><span class="n">'+pname(k)+'</span><span class="tm">'+fmt(tm[k])+'</span>'+
+      (k==='sunrise'?'<span class="bell" style="visibility:hidden"></span>':'<button class="bell'+(on?' on':'')+'" data-k="'+k+'">'+ico(on?'bell':'bellOff',19)+'</button>')+'</div>'});
+  $('times').innerHTML=h;
+  $('qb').textContent=ar(Math.round(qibla(P.loc.lat,P.loc.lng)))+'° '+t('fromN');
+  tick()}
+function tick(){var np=nextPrayer();if(!np)return;$('nName').textContent=np.name;
+  $('nCd').textContent=t('after')+' '+countdown(np.at-new Date())+' • '+fmt(np.at)}
+$('times').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var k=b.getAttribute('data-k');
+  P=ls('pray',{});if(!P.alarms)P.alarms={};P.alarms[k]=P.alarms[k]===false;save();draw()});
+setInterval(function(){if(ls('pray',{}).loc)tick()},20000);
+window.__back=function(){return false};
+function boot(){applyI18n();fillIcons();fillMethods();ms.value=P.method||'mwl';$('asr').value=String(P.asr||1);draw()}
+boot();if(P.loc)syncAlarms();
+if(location.search.indexOf('s=qibla')>=0)setTimeout(function(){var r=document.getElementById('qRow');if(r){r.scrollIntoView({block:'center',behavior:'smooth'});r.style.background='var(--hl)';r.style.borderRadius='12px'}},600);
+</script></body></html>
