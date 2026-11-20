@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<link rel="stylesheet" href="common.css">
+<style>
+.hero{text-align:center;padding:26px 10px 14px}
+.hero b{display:block;font-family:var(--title);font-weight:400;font-size:40px;color:#f3d28a;word-spacing:.32em}
+.hero span{font-weight:300;color:#9fb0cc;font-size:14px}
+.tile{display:flex;align-items:center;gap:14px;width:100%;text-align:right;padding:16px;border-radius:20px;margin-bottom:12px;background:var(--navy2);border:1px solid rgba(255,255,255,.07)}
+.tile:active{background:#1d3560}
+.tile .ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:28px;flex:none}
+.tile .tx{flex:1}
+.tile .tx b{display:block;font-family:var(--title);font-weight:400;font-size:23px;word-spacing:.32em}
+.tile .tx span{font-size:13.5px;font-weight:300;color:#b9c6dd}
+.tile .ar{font-size:22px;color:#6f84a8}
+.i1{background:#0b6b4e}.i2{background:#8a5a12}.i3{background:#3b4f86}.i4{background:#6a3b72}
+#hdr{display:flex;justify-content:center;gap:10px;font-size:13px;color:#9fb0cc;margin-bottom:12px;font-weight:300}
+</style></head><body>
+<div class="body" style="top:0;padding-top:calc(14px + env(safe-area-inset-top,0px))">
+ <div class="hero"><b>استغفار</b><span>أستغفر الله العظيم وأتوب إليه</span></div>
+ <button class="tile" id="tQ"><div class="ic i1">📖</div><div class="tx"><b>المصحف الشريف</b><span id="qSub">المصحف المدني • ٦٠٤ صفحة</span></div><div class="ar">‹</div></button>
+ <button class="tile" id="tP"><div class="ic i2">🕌</div><div class="tx"><b>مواقيت الصلاة</b><span id="pSub">فعّل الموقع لعرض المواقيت</span></div><div class="ar">‹</div></button>
+ <button class="tile" id="tI"><div class="ic i3">📿</div><div class="tx"><b>عدّاد الاستغفار</b><span>مئة استغفار وتخفيف الذنوب</span></div><div class="ar">‹</div></button>
+ <button class="tile" id="tM"><div class="ic i4">🤲</div><div class="tx"><b>الترحّم والإعدادات</b><span>التذكير اليومي • الترحّم • مشاركة التطبيق</span></div><div class="ar">‹</div></button>
+ <button class="btn ghost" id="upChk" style="margin-top:4px;font-size:14px">التحقق من وجود تحديث</button>
+ <div class="muted" id="ver" style="text-align:center;margin-top:8px;font-size:12px"></div>
+ <div class="muted" style="text-align:center;margin-top:8px;font-size:12px">خطوط المصحف: مجمّع الملك فهد لطباعة المصحف الشريف – بخط عثمان طه</div>
+</div>
+<div class="modal" id="locModal"><div class="box"><h3>الموقع</h3>
+ <div class="muted">فعّل الموقع لنجلب لك مواقيت الصلاة في محافظتك أو دولتك أو قضائك.</div>
+ <button class="btn gold" id="lmYes">تفعيل الموقع</button><button class="btn ghost" id="lmNo">لاحقًا</button></div></div>
+<div class="modal" id="upModal"><div class="box"><h3>تحديث جديد</h3>
+ <div class="muted" id="upTxt"></div>
+ <div id="upBar" style="display:none;height:8px;border-radius:4px;background:#0f1d36;margin-top:12px;overflow:hidden"><div id="upFill" style="height:100%;width:0;background:var(--gold)"></div></div>
+ <button class="btn gold" id="upYes">تحديث الآن</button><button class="btn ghost" id="upNo">لاحقًا</button></div></div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script>
+<script>
+$('tQ').onclick=function(){location.href='quran.html'};
+$('tP').onclick=function(){location.href='prayer.html'};
+$('tI').onclick=function(){location.href='index.html'};
+$('tM').onclick=function(){location.href='index.html?settings=1'};
+var q=ls('qpage',0);if(q>1)$('qSub').textContent='أكمل القراءة من صفحة '+ar(q);
+function sub(){var np=nextPrayer();if(np)$('pSub').textContent=np.name+' بعد '+countdown(np.at-new Date())}
+sub();setInterval(sub,30000);
+var P=ls('pray',{});
+if(!P.loc&&!ls('locAsked',false)){$('locModal').classList.add('show')}
+$('lmNo').onclick=function(){ss('locAsked',true);$('locModal').classList.remove('show')};
+$('lmYes').onclick=function(){ss('locAsked',true);$('lmYes').textContent='جارٍ تحديد الموقع…';
+  askLocation(function(o,e){$('locModal').classList.remove('show');$('lmYes').textContent='تفعيل الموقع';
+    if(o){toast('تم تحديد موقعك: '+placeName(o));sub();syncAlarms()}
+    else toast(e==='denied'?'لم تُمنح صلاحية الموقع':'تعذّر تحديد الموقع')})};
+window.__back=function(){if($('upModal').classList.contains('show')){$('upNo').click();return true}if($('locModal').classList.contains('show')){$('lmNo').click();return true}return false};
+if(P.loc)syncAlarms();
+/* ---- in-app update ---- */
+var manual=false;
+try{if(window.Android&&Android.appVersion)$('ver').textContent='الإصدار '+Android.appVersion()}catch(e){}
+window.__updateInfo=function(r){
+  if(r.error){if(manual)toast('تعذّر التحقق من التحديث. تأكد من الإنترنت');manual=false;return}
+  if(r.available){$('upTxt').textContent=(r.name||'')+(r.notes?'\n'+r.notes:'');$('upTxt').style.whiteSpace='pre-line';
+    $('upBar').style.display='none';$('upYes').style.display='';$('upYes').textContent='تحديث الآن';$('upModal').classList.add('show')}
+  else if(manual)toast('أنت على آخر إصدار');
+  manual=false};
+window.__updateProgress=function(p){$('upBar').style.display='block';
+  if(p>100){$('upYes').style.display='none';$('upTxt').textContent='اكتمل التنزيل. اضغط «تثبيت» في نافذة النظام.';$('upFill').style.width='100%';return}
+  $('upFill').style.width=p+'%';$('upYes').style.display='none';$('upTxt').textContent='جارٍ تنزيل التحديث… '+ar(p)+'٪'};
+window.__updateFail=function(w){$('upYes').style.display='';$('upYes').textContent='إعادة المحاولة';
+  $('upTxt').textContent=w==='perm'?'اسمح للتطبيق بتثبيت التطبيقات من الإعدادات التي فُتحت، ثم ارجع واضغط إعادة المحاولة.':'فشل التحديث. تأكد من الإنترنت وأعد المحاولة.'};
+$('upYes').onclick=function(){$('upTxt').textContent='جارٍ البدء…';try{Android.installUpdate()}catch(e){}};
+$('upNo').onclick=function(){$('upModal').classList.remove('show')};
+$('upChk').onclick=function(){manual=true;try{Android.checkUpdate()}catch(e){manual=false}};
+if(!(P.loc===undefined&&!ls('locAsked',false)))setTimeout(function(){try{Android.checkUpdate()}catch(e){}},800);
+</script></body></html>

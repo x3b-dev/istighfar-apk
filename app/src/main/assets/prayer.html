@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<link rel="stylesheet" href="common.css">
+<style>
+.next{text-align:center;padding:20px 16px;background:linear-gradient(160deg,#0b6b4e,#13405f)}
+.next .nm{font-family:var(--title);font-size:34px;word-spacing:.32em;color:#f3d28a}
+.next .cd{font-size:15px;font-weight:300;margin-top:4px;color:#dfeaf7}
+.pt{display:flex;align-items:center;gap:10px;padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.07)}
+.pt:last-child{border-bottom:0}
+.pt .n{flex:1;font-size:17px}
+.pt .t{font-size:17px;font-weight:500;min-width:92px;text-align:left;direction:ltr}
+.pt.now{background:rgba(206,142,39,.16);border-radius:12px}
+.pt.now .n{color:#f3d28a;font-weight:500}
+.bell{font-size:18px;padding:4px 6px;opacity:.35}.bell.on{opacity:1}
+</style></head><body>
+<div class="top"><button class="ib" id="bBack">›</button><h1>مواقيت الصلاة</h1><span style="width:40px"></span></div>
+<div class="body">
+ <div class="card" id="locCard">
+  <h2>الموقع</h2>
+  <div class="muted" id="locTxt">فعّل الموقع لجلب مواقيت الصلاة في محافظتك أو دولتك.</div>
+  <button class="btn gold" id="locBtn" style="margin-top:12px">تفعيل الموقع</button>
+ </div>
+ <div id="main" style="display:none">
+  <div class="card next"><div class="muted" style="color:#cfe0f3">الصلاة القادمة</div><div class="nm" id="nName">—</div><div class="cd" id="nCd"></div></div>
+  <div class="card"><h2 id="dayTitle">أوقات اليوم</h2><div id="times"></div>
+   <div class="muted" style="margin-top:8px">الجرس 🔔 يفعّل تنبيه الأذان بصوت الإشعار العادي لتلك الصلاة.</div></div>
+  <div class="card"><h2>إعدادات الحساب</h2>
+   <div class="row"><span>طريقة الحساب</span><select id="method"></select></div>
+   <div class="row"><span>العصر</span><select id="asr"><option value="1">الجمهور (الشافعي، المالكي، الحنبلي)</option><option value="2">الحنفي</option></select></div>
+   <div class="row"><span>اتجاه القبلة</span><b id="qb">—</b></div>
+   <div class="muted" style="margin-top:6px">الأوقات تُحسب داخل الجهاز دون إنترنت. قد يختلف الحساب بدقائق بين الطرق، فاختر الطريقة المعتمدة في بلدك.</div>
+  </div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script>
+<script>
+var P=ls('pray',{});if(!P.alarms)P.alarms={};
+function save(){ss('pray',P);syncAlarms()}
+var ms=$('method');for(var k in METHODS){var o=document.createElement('option');o.value=k;o.textContent=METHODS[k].n;ms.appendChild(o)}
+ms.value=P.method||'mwl';$('asr').value=String(P.asr||1);
+ms.onchange=function(){P=ls('pray',{});P.method=ms.value;save();draw()};
+$('asr').onchange=function(){P=ls('pray',{});P.asr=+$('asr').value;save();draw()};
+$('bBack').onclick=function(){location.href='home.html'};
+$('locBtn').onclick=function(){$('locBtn').textContent='جارٍ تحديد الموقع…';
+  askLocation(function(o,e){if(o){P=ls('pray',{});toast('تم تحديد الموقع');draw();syncAlarms()}else{
+    $('locBtn').textContent='تفعيل الموقع';
+    toast(e==='denied'?'لم تُمنح صلاحية الموقع':(e==='off'?'شغّل خدمة الموقع (GPS) في الهاتف':'تعذّر تحديد الموقع'))}})};
+function draw(){P=ls('pray',{});if(!P.alarms)P.alarms={};
+  if(!P.loc){$('main').style.display='none';return}
+  $('main').style.display='block';
+  $('locTxt').textContent=placeName(P.loc);$('locBtn').textContent='تحديث الموقع';
+  var t=dayTimes(new Date()),np=nextPrayer(),h='';
+  NAMES.forEach(function(n){var on=P.alarms[n[0]]!==false&&n[0]!=='sunrise';
+    h+='<div class="pt'+(np&&np.key===n[0]?' now':'')+'"><span class="n">'+n[1]+'</span><span class="t">'+fmt(t[n[0]])+'</span>'+
+      (n[0]==='sunrise'?'<span class="bell" style="visibility:hidden">🔔</span>':'<button class="bell'+(on?' on':'')+'" data-k="'+n[0]+'">🔔</button>')+'</div>'});
+  $('times').innerHTML=h;
+  $('qb').textContent=ar(Math.round(qibla(P.loc.lat,P.loc.lng)))+'° من الشمال';
+  tick()}
+function tick(){var np=nextPrayer();if(!np)return;$('nName').textContent=np.name;
+  $('nCd').textContent='بعد '+countdown(np.at-new Date())+' • '+fmt(np.at)}
+$('times').addEventListener('click',function(e){var k=e.target.getAttribute('data-k');if(!k)return;
+  P=ls('pray',{});if(!P.alarms)P.alarms={};P.alarms[k]=P.alarms[k]===false;save();draw()});
+setInterval(function(){if(ls('pray',{}).loc)tick()},20000);
+window.__back=function(){return false};
+draw();if(P.loc)syncAlarms();
+</script></body></html>
