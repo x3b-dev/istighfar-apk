@@ -1,0 +1,138 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<link rel="stylesheet" href="common.css">
+<style>
+body{background:var(--cream);color:#16130c}
+.top{background:var(--navy2)}
+.top .mid{flex:1;text-align:center;line-height:1.25}
+.top .mid b{display:block;font-family:var(--title);font-weight:400;font-size:20px;color:#f3d28a;word-spacing:.32em}
+.top .mid span{font-size:12px;font-weight:300;color:#b9c6dd}
+#pg{position:absolute;top:calc(54px + env(safe-area-inset-top,0px));bottom:calc(52px + env(safe-area-inset-bottom,0px));right:0;left:0;padding:6px 10px;display:flex;flex-direction:column;touch-action:pan-y}
+.ln{display:flex;direction:rtl;justify-content:space-between;align-items:center;white-space:nowrap;flex:1;min-height:0}
+.ln.c{justify-content:center;gap:.28em}
+.ln.h{justify-content:center}
+.w{color:#16130c;line-height:1}
+.ln.h .w{color:#7a4f0c}
+.ln.m .w{display:inline-block}
+.bar{position:absolute;bottom:0;right:0;left:0;height:calc(52px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--navy2);display:flex;align-items:stretch}
+.bar button{flex:1;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#d8e2f3}
+.bar button i{font-style:normal;font-size:19px}
+.bar button.on i{color:#f3d28a}
+#sheet{position:fixed;inset:0;background:var(--navy);z-index:15;display:none;color:#fff}
+#sheet.show{display:flex;flex-direction:column}
+#sheet .top{position:relative;flex:none}
+.tabs{display:flex;gap:6px;padding:8px 10px;flex:none}
+.tabs button{flex:1;padding:10px 4px;border-radius:12px;background:rgba(255,255,255,.08);font-size:14px;font-weight:500}
+.tabs button.on{background:var(--gold);color:#201505}
+#list{flex:1;min-height:0;overflow-y:auto;padding:0 12px 20px}
+.it{display:flex;align-items:center;gap:12px;padding:13px 8px;border-bottom:1px solid rgba(255,255,255,.07)}
+.it .n{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.09);display:grid;place-items:center;font-size:13px}
+.it .t{flex:1;font-family:var(--title);font-size:19px;word-spacing:.32em}
+.it .p{font-size:13px;color:#9fb0cc;font-weight:300}
+.it .x{font-size:20px;padding:6px}
+#goto{display:flex;gap:8px;padding:0 12px 8px;flex:none}
+#goto input{flex:1;background:#0f1d36;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px;font-family:inherit;font-size:16px;text-align:center;user-select:text;-webkit-user-select:text}
+#goto button{padding:0 18px;border-radius:12px;background:var(--green);font-weight:500}
+#err{position:absolute;inset:80px 20px auto 20px;color:#7a1f1f;text-align:center;display:none;line-height:1.8}
+</style></head><body>
+<div class="top"><button class="ib" id="bBack" style="color:#fff">›</button>
+ <div class="mid"><b id="sName">—</b><span id="sInfo"></span></div>
+ <button class="ib" id="bMark" style="color:#fff">☆</button></div>
+<div id="pg"></div>
+<div id="err"></div>
+<div class="bar">
+ <button id="bPrev"><i>›</i>السابقة</button>
+ <button id="bGo"><i>⌖</i>متابعة القراءة</button>
+ <button id="bIdx"><i>☰</i>الفهرس</button>
+ <button id="bNext"><i>‹</i>التالية</button>
+</div>
+<div id="sheet">
+ <div class="top"><button class="ib" id="sClose" style="color:#fff">›</button><h1>الفهرس</h1><span style="width:40px"></span></div>
+ <div class="tabs"><button data-t="s" class="on">السور</button><button data-t="j">الأجزاء</button><button data-t="b">العلامات</button></div>
+ <div id="goto"><input id="gIn" type="number" inputmode="numeric" min="1" max="604" placeholder="رقم الصفحة (١–٦٠٤)"><button id="gBtn">انتقال</button></div>
+ <div id="list"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script>
+<script>
+var META=null,page=ls('qpage',1),marks=ls('qmarks',[]),loaded={},cur=0;
+var pg=$('pg');
+function fontFile(n){return 'quran/fonts/'+(n==='QCF4_QBSML'?n+'.woff2':n+'_W.woff2')}
+function loadFont(n){if(loaded[n])return loaded[n];
+  var f=new FontFace(n,"url('"+fontFile(n)+"')");
+  loaded[n]=f.load().then(function(ff){document.fonts.add(ff)});return loaded[n]}
+function juzOf(p){var j=1;for(var i=0;i<30;i++)if(META.juz[i]<=p)j=i+1;return j}
+function show(p,quiet){
+  p=Math.max(1,Math.min(604,p|0));var my=++cur;
+  getJSON('quran/pages/'+('00'+p).slice(-3)+'.json',function(d){
+    if(my!==cur)return;
+    var fonts={};d.lines.forEach(function(l){l.words.forEach(function(w){fonts[w.font]=1})});
+    Promise.all(Object.keys(fonts).map(loadFont)).then(function(){if(my===cur)render(d,p)},
+      function(){err('تعذّر تحميل خط الصفحة')});
+  },function(){err('تعذّر تحميل الصفحة. إن لم يكن المصحف ضمن التطبيق فأعد بناء التطبيق من GitHub.')});
+}
+function err(t){var e=$('err');e.textContent=t;e.style.display='block'}
+function render(d,p){
+  $('err').style.display='none';page=p;ss('qpage',p);
+  pg.innerHTML='';
+  var W=pg.clientWidth-20,H=pg.clientHeight-12,lh=H/15,short=(p===1||p===2);
+  var rows=[];
+  d.lines.forEach(function(l){
+    var row=document.createElement('div');row.className='ln';
+    var t=l.words[0].type;if(t==='surah_header'||t==='bismillah')row.className+=' c h';
+    else if(short)row.className+=' c';
+    l.words.forEach(function(w){var s=document.createElement('span');s.className='w';
+      s.style.fontFamily="'"+w.font+"'";s.textContent=String.fromCharCode(w.code);
+      if(w.verse_key)s.dataset.v=w.verse_key;row.appendChild(s)});
+    rows.push(row);
+  });
+  /* pages 1-2 have fewer than 15 lines: keep line height of a 15-line page, pad at the top like the printed mushaf */
+  if(d.lines.length<15){var pad=document.createElement('div');pad.style.flex=String(15-d.lines.length);pad.style.minHeight='0';pg.appendChild(pad)}
+  rows.forEach(function(r){pg.appendChild(r)});
+  /* fit font size: widest ordinary line must fit the width, line must fit its row */
+  var fs=40,maxw=0;
+  rows.forEach(function(r){r.style.fontSize='40px';r.classList.add('m')});
+  rows.forEach(function(r){if(r.className.indexOf(' h')<0&&!(short&&false)){var w=0;[].forEach.call(r.children,function(c){w+=c.offsetWidth});if(w>maxw)maxw=w}});
+  rows.forEach(function(r){r.classList.remove('m')});
+  if(maxw>0)fs=40*W/maxw;
+  fs=Math.min(fs,lh*0.98);
+  rows.forEach(function(r){var isH=r.className.indexOf(' h')>=0;r.style.fontSize=(isH?Math.min(fs*1.15,lh*1.0):fs)+'px'});
+  if(short){pg.style.paddingInline='8%'}else pg.style.paddingInline='10px';
+  var s=d.surahs&&d.surahs.length?d.surahs[0]:null;
+  var nm=META.surahs[(s?s.id:1)-1];
+  $('sName').textContent='سورة '+(nm?nm.name:'');
+  $('sInfo').textContent='الجزء '+ar(juzOf(p))+' • صفحة '+ar(p);
+  var on=marks.indexOf(p)>=0;$('bMark').textContent=on?'★':'☆';$('bMark').style.color=on?'#f3d28a':'#fff';
+}
+function go(p){show(p)}
+$('bNext').onclick=function(){if(page<604)go(page+1)};
+$('bPrev').onclick=function(){if(page>1)go(page-1)};
+$('bGo').onclick=function(){var l=ls('qpage',1);go(l);toast('صفحة '+ar(l))};
+$('bBack').onclick=function(){if(!window.__back())location.href='home.html'};
+$('bMark').onclick=function(){var i=marks.indexOf(page);if(i>=0){marks.splice(i,1);toast('أُزيلت العلامة')}else{marks.push(page);toast('حُفظت العلامة في الصفحة '+ar(page))}
+  ss('qmarks',marks);var on=marks.indexOf(page)>=0;$('bMark').textContent=on?'★':'☆';$('bMark').style.color=on?'#f3d28a':'#fff'};
+/* swipe: finger moving right = next page (pages run right to left) */
+var sx=0,sy=0;
+pg.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+pg.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx>0){if(page<604)go(page+1)}else if(page>1)go(page-1)}},{passive:true});
+/* index */
+var tab='s';
+function fillList(){var L=$('list'),h='';
+  if(tab==='s')META.surahs.forEach(function(s){h+='<div class="it" data-p="'+s.page+'"><div class="n">'+ar(s.id)+'</div><div class="t">'+s.name+'</div><div class="p">صفحة '+ar(s.page)+'</div></div>'});
+  else if(tab==='j')META.juz.forEach(function(p,i){h+='<div class="it" data-p="'+p+'"><div class="n">'+ar(i+1)+'</div><div class="t">الجزء '+ar(i+1)+'</div><div class="p">صفحة '+ar(p)+'</div></div>'});
+  else{if(!marks.length)h='<div class="muted" style="padding:24px;text-align:center">لا توجد علامات بعد. اضغط ☆ أثناء القراءة لحفظ الصفحة.</div>';
+    marks.slice().sort(function(a,b){return a-b}).forEach(function(p){h+='<div class="it" data-p="'+p+'"><div class="n">★</div><div class="t">صفحة '+ar(p)+'</div><div class="p">الجزء '+ar(juzOf(p))+'</div><button class="x" data-del="'+p+'">🗑</button></div>'})}
+  L.innerHTML=h}
+$('list').addEventListener('click',function(e){var d=e.target.getAttribute('data-del');
+  if(d){marks.splice(marks.indexOf(+d),1);ss('qmarks',marks);fillList();return}
+  var it=e.target.closest('.it');if(it){openSheet(false);go(+it.getAttribute('data-p'))}});
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){tab=b.getAttribute('data-t');
+  document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});fillList()}});
+$('gBtn').onclick=function(){var v=parseInt($('gIn').value,10);if(v>=1&&v<=604){openSheet(false);go(v)}else toast('اكتب رقمًا من ١ إلى ٦٠٤')};
+function openSheet(o){$('sheet').classList.toggle('show',o);if(o)fillList()}
+$('bIdx').onclick=function(){openSheet(true)};$('sClose').onclick=function(){openSheet(false)};
+window.__back=function(){if($('sheet').classList.contains('show')){openSheet(false);return true}return false};
+getJSON('quran/meta.json',function(m){META=m;var q=parseInt((location.search.match(/p=(\d+)/)||[])[1],10);show(q||page)},
+  function(){err('المصحف غير موجود داخل التطبيق. أعد بناء التطبيق من GitHub Actions (خطوة جلب المصحف).')});
+</script></body></html>
