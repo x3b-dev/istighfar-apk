@@ -8,11 +8,6 @@
 - **باللمس**: كل لمسة = استغفارة.
 - مفتاح **الصوت**: صوت خفيف عند كل خرزة.
 
-## الحصول على ملف APK
-1. ارفع المشروع إلى GitHub (فرع `main`).
-2. يعمل تلقائيًا workflow **Build APK** (تبويب Actions).
-3. بعد دقائق تجد الملف `Istighfar.apk` في **Releases** أو داخل artifacts.
-
 ## الخطوط
 الخطوط مضمّنة في `app/src/main/assets/fonts/`: خط **Nabi** للعبارات الكبيرة والآية، و**Rubik** (Light/Regular/Medium) لباقي النصوص.
 
