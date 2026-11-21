@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#f7f1e3">
+<title>القبلة</title>
+<link rel="stylesheet" href="common.css"><link rel="stylesheet" href="motion.css">
+<style>
+.seg{display:flex;background:var(--chip);border-radius:16px;padding:4px;gap:2px;margin:0 auto 14px;max-width:300px}
+.seg button{flex:1;padding:10px 8px;border-radius:12px;font:500 14px var(--ui);color:var(--mut);display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button.on{background:var(--card);color:var(--fg);box-shadow:0 1px 5px rgba(0,0,0,.14)}
+.dialw{position:relative;width:min(88vw,330px);aspect-ratio:1;margin:6px auto 0}
+.dialw svg{width:100%;height:100%;display:block;overflow:visible}
+#dial{transform-origin:150px 150px;transition:transform .12s linear}
+.dialw svg.ptr{width:22px;height:22px}
+.ptr{position:absolute;top:-8px;left:50%;margin-left:-11px;width:22px;height:22px;color:var(--on);filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.mid b{font:500 52px/1 var(--ui);color:var(--fg);letter-spacing:-.02em}
+.mid span{font:300 13px var(--ui);color:var(--mut);margin-top:6px}
+.al .ring{stroke:var(--on)}
+.stat{margin-top:22px;display:flex;gap:10px}
+.stat div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px;text-align:center;box-shadow:var(--shadow)}
+.stat small{display:block;font:300 12px var(--ui);color:var(--mut)}
+.stat b{font:500 20px var(--ui);color:var(--fg)}
+.msg{margin:14px 6px 0;text-align:center;font:500 14px/1.7 var(--ui);color:var(--mut);min-height:24px;transition:color .3s}
+.msg.ok{color:var(--on)}
+.need{text-align:center;padding:40px 10px}
+.need .ei{width:84px;height:84px;border-radius:30px;margin:0 auto 16px;display:grid;place-items:center;background:var(--hl);color:var(--gold)}
+/* camera */
+#cam{position:fixed;inset:0;z-index:10;background:#0a1020;display:none;overflow:hidden}
+#cam.on{display:block}
+#cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#cam .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,10,22,.55),rgba(6,10,22,0) 28%,rgba(6,10,22,0) 55%,rgba(6,10,22,.72))}
+#arch{position:absolute;left:0;top:30%;width:150px;margin-left:-75px;transition:opacity .25s;will-change:transform;pointer-events:none;text-align:center}
+#arch .a{filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));transition:transform .4s var(--e-spring)}
+#arch.al .a{transform:scale(1.12)}
+#arch .lbl{margin-top:8px;font:500 13px var(--ui);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.edge{position:absolute;top:42%;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;display:none;place-items:center;border:1px solid rgba(255,255,255,.4)}
+#eL{left:14px}#eR{right:14px}
+.edge.on{display:grid;animation:pulseE 1.2s ease-in-out infinite}
+@keyframes pulseE{50%{transform:scale(1.12)}}
+#camBot{position:absolute;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom,0px));padding:14px 16px;border-radius:26px;text-align:center;color:#fff;background:rgba(20,28,50,.38);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+#camBot b{font:500 26px var(--ui);display:block}
+#camBot span{font:300 13px var(--ui);opacity:.9}
+#camBot.ok{background:rgba(6,122,87,.55)}
+#cam .top{z-index:3;background:transparent;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+#cam .top h1,#cam .top .ib{color:#fff}#cam .top .ib{background:rgba(255,255,255,.2)}
+</style>
+</head>
+<body class="go">
+<div class="top"><button class="ib" id="bBack"><span class="flip" data-ic="chevR"></span></button><h1 data-i="qT"></h1><span style="width:40px"></span></div>
+<div class="body" id="main">
+  <div class="seg rise" style="--i:0"><button id="mC" class="on"><span data-ic="compass" data-is="18"></span><span data-i="qComp"></span></button><button id="mV"><span data-ic="camera" data-is="18"></span><span data-i="qCam"></span></button></div>
+  <div id="need" class="need" style="display:none"><div class="ei" data-ic="pin" data-is="40"></div><p class="muted" data-i="qNeedLoc"></p><button class="btn" id="locBtn" data-i="locOn"></button></div>
+  <div id="comp">
+    <div class="dialw rise" style="--i:1" id="dw">
+      <svg viewBox="0 0 300 300">
+        <defs><radialGradient id="dg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="var(--card)"/><stop offset="1" stop-color="var(--chip)"/></radialGradient></defs>
+        <circle cx="150" cy="150" r="146" fill="url(#dg)" stroke="var(--line)" stroke-width="2"/>
+        <g id="dial"><circle class="ring" cx="150" cy="150" r="128" fill="none" stroke="var(--line)" stroke-width="3"/><g id="ticks"></g>
+          <g id="kb"><circle r="21" fill="#16213a"/><circle r="21" fill="none" stroke="#e3b868" stroke-width="2"/><g transform="translate(-11,-11) scale(.92)" fill="none" stroke="#e3b868" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8 12 5.3 19.5 8 12 10.7z"/><path d="M4.5 8v9.6l7.5 2.7v-9.6z" fill="currentColor" fill-opacity=".22"/><path d="M19.5 8v9.6L12 20.300v-9.600z" fill="currentColor" fill-opacity=".5"/><path d="M4.5 12l7.500 2.700L19.500 12" stroke-width="2.600"/><path d="M14.600 16.200l2.600-.9v3l-2.600.9z" fill="currentColor"/></g></g>
+        </g>
+      </svg>
+      <svg class="ptr" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22 3 4h18z"/></svg>
+      <div class="mid"><b id="hd">—</b><span id="hdl"></span></div>
+    </div>
+    <div class="msg rise" style="--i:2" id="msg"></div>
+    <div class="stat rise" style="--i:3"><div><small data-i="qHeading"></small><b id="s1">—</b></div><div><small data-i="qibla"></small><b id="s2">—</b></div></div>
+    <p class="muted rise" style="--i:4;text-align:center;margin-top:16px;font-size:12.5px" id="calib"></p>
+  </div>
+</div>
+
+<div id="cam">
+  <video id="vid" playsinline muted autoplay></video><div class="shade"></div>
+  <div class="top"><button class="ib" id="cBack"><span class="flip" data-ic="chevR"></span></button><h1 data-i="qT"></h1><span style="width:40px"></span></div>
+  <div id="arch"><div class="a"><svg width="150" height="190" viewBox="0 0 150 190" fill="none">
+     <path d="M12 186V74C12 36 40 10 75 6c35 4 63 30 63 68v112" stroke="#f1d79b" stroke-width="5" stroke-linecap="round"/>
+     <path d="M28 186V78C28 46 49 25 75 21c26 4 47 25 47 57v108" stroke="rgba(255,255,255,.55)" stroke-width="2.5" stroke-linecap="round"/>
+     <path d="M75 6V-6M69 -2h12" stroke="#f1d79b" stroke-width="3.5" stroke-linecap="round"/>
+     <g transform="translate(46,78) scale(2.2)" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8 12 5.3 19.5 8 12 10.7z"/><path d="M4.5 8v9.6l7.5 2.7v-9.6z" fill="currentColor" fill-opacity=".22"/><path d="M19.5 8v9.6L12 20.300v-9.600z" fill="currentColor" fill-opacity=".5"/><path d="M4.5 12l7.500 2.700L19.500 12" stroke-width="2.600"/><path d="M14.600 16.200l2.600-.9v3l-2.600.9z" fill="currentColor"/></g></svg></div><div class="lbl" id="archL"></div></div>
+  <div class="edge" id="eL"><span data-ic="chevL" data-is="26"></span></div><div class="edge" id="eR"><span data-ic="chevR" data-is="26"></span></div>
+  <div id="camBot"><b id="cd1"></b><span id="cd2"></span></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script><script src="core.js"></script><script src="i18n2.js"></script>
+<script>
+var H=0,have=false,sensor=false,MODE='comp',alignedNow=false,QB=null,stream=null;
+function loc(){var p=ls('pray',{});return p.loc||null}
+/* heading the BACK of the device points to (works flat and upright) */
+function compass(a,b,g){var r=Math.PI/180;
+  if(Math.abs(b||0)<40){return (360-a+360)%360}
+  var z=a*r,x=(b||0)*r,y=(g||0)*r,cY=Math.cos(y),cZ=Math.cos(z),sX=Math.sin(x),sY=Math.sin(y),sZ=Math.sin(z);
+  var Vx=-cZ*sY-sZ*sX*cY,Vy=-sZ*sY+cZ*sX*cY,h=Math.atan(Vx/Vy);
+  if(Vy<0)h+=Math.PI;else if(Vx<0)h+=2*Math.PI;var o=h/r;return isNaN(o)?0:o}
+function smooth(h){if(!have){H=h;have=true}else{var d=((h-H+540)%360)-180;H=(H+d*.2+360)%360}sensor=true;draw()}
+window.addEventListener('deviceorientationabsolute',function(e){if(e.alpha!=null)smooth(compass(e.alpha,e.beta,e.gamma))},true);
+window.addEventListener('deviceorientation',function(e){if(e.webkitCompassHeading!=null)smooth(e.webkitCompassHeading);else if(e.absolute&&e.alpha!=null)smooth(compass(e.alpha,e.beta,e.gamma))},true);
+function delta(){return ((QB-H+540)%360)-180}
+function buildTicks(){var g='',i;for(i=0;i<360;i+=10){var big=i%90===0,r1=big?106:114,r2=122,a=i*Math.PI/180;
+  g+='<line x1="'+(150+r1*Math.sin(a)).toFixed(1)+'" y1="'+(150-r1*Math.cos(a)).toFixed(1)+'" x2="'+(150+r2*Math.sin(a)).toFixed(1)+'" y2="'+(150-r2*Math.cos(a)).toFixed(1)+'" stroke="'+(big?'var(--fg)':'var(--off)')+'" stroke-width="'+(big?2.6:1.6)+'" stroke-linecap="round"/>'}
+  var L=[['N',0],['E',90],['S',180],['W',270]];
+  L.forEach(function(l){var a=l[1]*Math.PI/180,x=150+88*Math.sin(a),y=150-88*Math.cos(a);
+    g+='<text x="'+x.toFixed(1)+'" y="'+(y+6).toFixed(1)+'" text-anchor="middle" font-family="Rubik" font-weight="'+(l[0]==='N'?500:400)+'" font-size="'+(l[0]==='N'?20:16)+'" fill="'+(l[0]==='N'?'#c4452e':'var(--mut)')+'" transform="rotate('+(-0)+' '+x+' '+y+')">'+l[0]+'</text>'});
+  $('ticks').innerHTML=g}
+function place(){if(QB==null)return;var a=QB*Math.PI/180;$('kb').setAttribute('transform','translate('+(150+128*Math.sin(a)).toFixed(1)+','+(150-128*Math.cos(a)).toFixed(1)+')')}
+function draw(){
+  if(QB==null)return;
+  var d=delta(),ad=Math.abs(d),ok=sensor&&ad<4;
+  $('dial').style.transform='rotate('+(-H)+'deg)';
+  $('hd').textContent=sensor?ar(Math.round(H))+'°':'—';
+  $('hdl').textContent='';
+  $('s1').textContent=sensor?ar(Math.round(H))+'°':'—';
+  $('s2').textContent=ar(Math.round(QB))+'°';
+  var m=$('msg');m.textContent=ok?t('qAligned'):(sensor?'':t('qNoSensor'));m.classList.toggle('ok',ok);
+  $('dw').classList.toggle('al',ok);
+  if(ok&&!alignedNow){try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}}
+  alignedNow=ok;
+  /* camera overlay */
+  if(MODE==='cam'){
+    var W=window.innerWidth,fov=62,x=W/2+(d/fov)*W,out=ad>fov/2-4;
+    var ar_=$('arch');ar_.style.transform='translateX('+Math.max(-80,Math.min(W+80,x))+'px)';ar_.style.opacity=out?0:1;ar_.classList.toggle('al',ok);
+    $('eL').classList.toggle('on',out&&d<0);$('eR').classList.toggle('on',out&&d>0);
+    $('cd1').textContent=ok?t('qAligned'):(sensor?ar(Math.round(ad))+'° '+(d<0?'←':'→'):t('qNoSensor'));
+    $('cd2').textContent=ok?'':t('qCamHint');$('camBot').classList.toggle('ok',ok)}
+}
+function setMode(m){
+  MODE=m;$('mC').classList.toggle('on',m==='comp');$('mV').classList.toggle('on',m==='cam');
+  $('cam').classList.toggle('on',m==='cam');
+  if(m==='cam')startCam();else stopCam();draw()}
+function startCam(){
+  try{navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(s){stream=s;$('vid').srcObject=s;var p=$('vid').play();if(p&&p.catch)p.catch(function(){})}).catch(function(){toast(t('qCamOff'));setMode('comp')})}
+  catch(e){toast(t('qCamOff'));setMode('comp')}}
+function stopCam(){if(stream){stream.getTracks().forEach(function(x){x.stop()});stream=null}try{$('vid').srcObject=null}catch(e){}}
+function init(){
+  var l=loc();
+  $('need').style.display=l?'none':'block';$('comp').style.display=l?'block':'none';
+  $('mV').parentNode.style.display=l?'flex':'none';
+  if(!l){QB=null;return}
+  QB=qibla(l.lat,l.lng);place();draw();
+  $('archL').textContent=t('qibla');
+  $('calib').textContent=t('qCalib')}
+$('mC').onclick=function(){setMode('comp')};$('mV').onclick=function(){setMode('cam')};
+$('bBack').onclick=function(){nav('index.html',true)};$('cBack').onclick=function(){setMode('comp')};
+$('locBtn').onclick=function(){$('locBtn').textContent=t('locBusy');askLocation(function(o){$('locBtn').textContent=t('locOn');if(o){init();syncAlarms()}else toast(t('locDenied'))})};
+window.__back=function(){if(MODE==='cam'){setMode('comp');return true}nav('index.html',true);return true};
+document.addEventListener('visibilitychange',function(){if(document.hidden&&MODE==='cam')setMode('comp')});
+window.onLangChange=function(){fillIcons();init()};
+applyTheme();applyI18n();fillIcons();buildTicks();init();
+setTimeout(function(){if(!sensor&&QB!=null)draw()},1800);
+</script>
+</body>
+</html>

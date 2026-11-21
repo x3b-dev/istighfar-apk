@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#f7f1e3">
+<title>المسبحة</title>
+<link rel="stylesheet" href="common.css"><link rel="stylesheet" href="motion.css">
+<style>
+.zs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin:0 -14px;padding-inline:14px;scrollbar-width:none}
+.zs::-webkit-scrollbar{display:none}
+.zs button{flex:none;padding:10px 16px;border-radius:99px;background:var(--card);border:1.5px solid var(--line);font:400 17px var(--title);color:var(--fg);white-space:nowrap}
+.zs button.on{background:var(--on);border-color:var(--on);color:#fff}
+.zt{text-align:center;font:400 40px/1.6 var(--title);word-spacing:.3em;color:var(--fg);margin:10px 0 0;min-height:70px;transition:opacity .2s,transform .3s var(--e-dec)}
+.zt.sw{opacity:0;transform:translateY(8px)}
+.bw{position:relative;width:min(80vw,290px);aspect-ratio:1;margin:8px auto 0}
+.bw svg.rg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#prog{transition:stroke-dashoffset .35s var(--e-dec)}
+#tap{position:absolute;inset:11%;border-radius:50%;background:radial-gradient(circle at 35% 28%,var(--card),var(--chip) 95%);border:1px solid var(--line);box-shadow:0 14px 30px rgba(22,33,58,.16),inset 0 2px 0 rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:transform .16s var(--e-std),box-shadow .2s}
+#tap:active,#tap.p{transform:scale(.95);box-shadow:0 6px 14px rgba(22,33,58,.18),inset 0 2px 0 rgba(255,255,255,.7)}
+#tap .rp{position:absolute;border-radius:50%;background:var(--on);opacity:.22;transform:scale(0);animation:rp .6s var(--e-dec) forwards;pointer-events:none}
+@keyframes rp{to{transform:scale(1);opacity:0}}
+#cnt{font:500 64px/1 var(--ui);color:var(--fg);letter-spacing:-.02em;transition:transform .2s var(--e-spring)}
+#cnt.b{transform:scale(1.12)}
+#of{font:300 14px var(--ui);color:var(--mut);margin-top:6px}
+.tg{display:flex;justify-content:center;gap:8px;margin:20px 0 14px}
+.tg button{padding:9px 16px;border-radius:14px;background:var(--chip);font:500 14px var(--ui);color:var(--mut)}
+.tg button.on{background:var(--card);color:var(--on);box-shadow:0 1px 5px rgba(0,0,0,.14)}
+.ac{display:flex;gap:10px}
+.ac button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:18px;background:var(--card);border:1px solid var(--line);font:500 14px var(--ui);color:var(--fg)}
+.ac button.on{color:var(--on)}
+.rd{text-align:center;margin-top:14px;font:300 13px var(--ui);color:var(--mut)}
+.rd b{font-weight:500;color:var(--goldt)}
+</style>
+</head>
+<body class="go">
+<div class="top"><button class="ib" id="bBack"><span class="flip" data-ic="chevR"></span></button><h1 data-i="tsT"></h1><span style="width:40px"></span></div>
+<div class="body">
+  <div class="zs rise" style="--i:0" id="zs"></div>
+  <div class="zt rise" style="--i:1" id="zt"></div>
+  <div class="bw rise" style="--i:2"><svg class="rg" viewBox="0 0 300 300" id="rg"></svg><div id="tap"><div id="cnt">٠</div><div id="of"></div></div></div>
+  <div class="tg rise" style="--i:3" id="tg"></div>
+  <div class="ac rise" style="--i:4"><button id="bRes"><span data-ic="refresh" data-is="18"></span><span data-i="tsReset"></span></button><button id="bVib"><span data-ic="vibrate" data-is="18"></span><span data-i="tsVib"></span></button></div>
+  <div class="rd rise" style="--i:5" id="rd"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="common.js"></script><script src="core.js"></script><script src="i18n2.js"></script>
+<script>
+var Z=['z1','z2','z3','z4','z5','z6','z7','z8'],TG=[33,99,100,0];
+var S=ls('tsb',{z:'z1',target:33,c:{},r:{},vib:true});
+if(!S.c)S.c={};if(!S.r)S.r={};
+function save(){ss('tsb',S)}
+var RN=33,CIR=2*Math.PI*128;
+function buildRing(){var n=S.target>0&&S.target<=100?S.target:33,g='',i;RN=n;
+  g+='<circle cx="150" cy="150" r="128" fill="none" stroke="var(--line)" stroke-width="5"/>';
+  g+='<circle id="prog" cx="150" cy="150" r="128" fill="none" stroke="var(--on)" stroke-width="5" stroke-linecap="round" transform="rotate(-90 150 150)" stroke-dasharray="'+CIR.toFixed(1)+'" stroke-dashoffset="'+CIR.toFixed(1)+'"/>';
+  var step=n>50?Math.ceil(n/50):1;
+  for(i=0;i<n;i+=step){var a=i/n*2*Math.PI;g+='<circle class="bd" data-k="'+i+'" cx="'+(150+142*Math.sin(a)).toFixed(1)+'" cy="'+(150-142*Math.cos(a)).toFixed(1)+'" r="'+(n>50?2.2:3.4)+'" fill="var(--off)"/>'}
+  $('rg').innerHTML=g;paint()}
+function cur(){return S.c[S.z]||0}
+function paint(){
+  var c=cur(),tg=S.target,pos=tg>0?c:(c%33),den=tg>0?tg:33;
+  $('cnt').textContent=ar(c);
+  $('of').textContent=tg>0?('/ '+ar(tg)):t('tsFree');
+  var p=$('prog');if(p)p.setAttribute('stroke-dashoffset',(CIR*(1-pos/den)).toFixed(1));
+  var n=RN;[].forEach.call(document.querySelectorAll('.bd'),function(d){var k=+d.getAttribute('data-k');d.setAttribute('fill',(k/n)<(pos/den)?'var(--gold)':'var(--off)')});
+  $('rd').innerHTML=(S.r[S.z]?t('tsRound')+': <b>'+ar(S.r[S.z])+'</b>':'')}
+function drawZ(){$('zs').innerHTML=Z.map(function(k){return '<button data-z="'+k+'" class="'+(k===S.z?'on':'')+'">'+t(k)+'</button>'}).join('');
+  $('zt').textContent=t(S.z)}
+function drawTg(){$('tg').innerHTML=TG.map(function(v){return '<button data-t="'+v+'" class="'+(v===S.target?'on':'')+'">'+(v?ar(v):'∞')+'</button>'}).join('');
+  $('bVib').classList.toggle('on',S.vib)}
+function vib(p){if(S.vib){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}}
+function tap(e){
+  var el=$('tap'),r=el.getBoundingClientRect(),d=Math.max(r.width,r.height),rp=document.createElement('i');rp.className='rp';
+  var x=(e&&e.clientX!=null?e.clientX:r.left+r.width/2)-r.left,y=(e&&e.clientY!=null?e.clientY:r.top+r.height/2)-r.top;
+  rp.style.cssText='width:'+d+'px;height:'+d+'px;left:'+(x-d/2)+'px;top:'+(y-d/2)+'px';el.appendChild(rp);setTimeout(function(){rp.remove()},650);
+  var c=cur()+1;
+  if(S.target>0&&c>=S.target){S.c[S.z]=0;S.r[S.z]=(S.r[S.z]||0)+1;vib([40,60,40]);toast(t('tsDone'));$('cnt').textContent=ar(S.target);
+    var p=$('prog');if(p)p.setAttribute('stroke-dashoffset','0');setTimeout(paint,420)}
+  else{S.c[S.z]=c;vib(12);paint()}
+  save();var n=$('cnt');n.classList.add('b');setTimeout(function(){n.classList.remove('b')},140)}
+$('tap').addEventListener('pointerdown',function(e){$('tap').classList.add('p');tap(e)});
+['pointerup','pointerleave','pointercancel'].forEach(function(n){$('tap').addEventListener(n,function(){$('tap').classList.remove('p')})});
+$('zs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  S.z=b.getAttribute('data-z');save();var z=$('zt');z.classList.add('sw');setTimeout(function(){drawZ();paint();z.classList.remove('sw')},140);
+  [].forEach.call($('zs').children,function(x){x.classList.toggle('on',x===b)})});
+$('tg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.target=+b.getAttribute('data-t');S.c[S.z]=0;save();drawTg();buildRing()});
+$('bRes').addEventListener('click',function(){S.c[S.z]=0;S.r[S.z]=0;save();paint()});
+$('bVib').addEventListener('click',function(){S.vib=!S.vib;save();drawTg();if(S.vib)vib(20)});
+$('bBack').onclick=function(){nav('index.html',true)};
+window.__back=function(){nav('index.html',true);return true};
+window.onLangChange=function(){fillIcons();drawZ();drawTg();paint()};
+applyTheme();applyI18n();fillIcons();drawZ();drawTg();buildRing();
+</script>
+</body>
+</html>

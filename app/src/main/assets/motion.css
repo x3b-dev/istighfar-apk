@@ -1,0 +1,33 @@
+/* Motion system (Material 3 style tokens):
+   enter = emphasized decelerate, exit = emphasized accelerate, press = 70ms in / 180ms out.
+   Navigation: shared-axis X (slide 30px + fade). Tabs: fade-through (scale .97 + fade). Lists: staggered rise. */
+:root{--e-dec:cubic-bezier(.05,.7,.1,1);--e-acc:cubic-bezier(.3,0,.8,.15);--e-std:cubic-bezier(.2,0,0,1);--e-spring:cubic-bezier(.34,1.5,.64,1);
+  --e-out:var(--e-dec);--e-in:var(--e-acc)}
+html[dir=rtl]{--dx:-1}html[dir=ltr]{--dx:1}
+@keyframes pgF{from{opacity:0;transform:translateX(calc(var(--dx) * 34px))}to{opacity:1;transform:none}}
+@keyframes pgB{from{opacity:0;transform:translateX(calc(var(--dx) * -34px))}to{opacity:1;transform:none}}
+@keyframes pgOF{to{opacity:0;transform:translateX(calc(var(--dx) * -26px)) scale(.985)}}
+@keyframes pgOB{to{opacity:0;transform:translateX(calc(var(--dx) * 26px)) scale(.985)}}
+html.pg-in-f body{animation:pgF .36s var(--e-dec) backwards}
+html.pg-in-b body{animation:pgB .36s var(--e-dec) backwards}
+body.pg-out-f{animation:pgOF .2s var(--e-acc) forwards}
+body.pg-out-b{animation:pgOB .2s var(--e-acc) forwards}
+/* staggered entrance: items fade up one after another (children also fade away on exit) */
+@keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes sink{to{opacity:0;transform:translateY(-8px) scale(.985)}}
+.rise{opacity:0}
+.go .rise{opacity:1;animation:rise .55s var(--e-dec) backwards;animation-delay:calc(min(var(--i,0),9) * 45ms)}
+body.pg-out-f .rise,body.pg-out-b .rise{animation:sink .2s var(--e-acc) forwards;animation-delay:calc(min(var(--i,0),9) * 8ms)}
+/* tab views: fade-through */
+@keyframes tabIn{from{opacity:0;transform:scale(.975) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes tabOut{to{opacity:0;transform:scale(.985)}}
+.view.leaving{animation:tabOut .12s var(--e-acc) forwards}
+.view.entering{animation:tabIn .38s var(--e-dec) backwards}
+/* press feedback */
+button,.tile,.row,.opt,.ib,.hero,#gear,#homeBtn,#pause,.seg button,.tabs button,.mb,.sw,.chip,.glassbar .gi{transition:transform .18s var(--e-std),opacity .16s,background-color .2s,box-shadow .2s}
+button:active,.tile:active,.ib:active,#gear:active,#homeBtn:active,#pause:active,.mb:active,.chip:active{transform:scale(.95);transition-duration:.07s}
+.hero:active,.tile.wide:active,.row:active,.opt:active{transform:scale(.985);transition-duration:.07s}
+/* sheets & modals */
+.sx,#sheet,#upSheet{transition:transform .42s var(--e-dec)}
+.modal .box{animation:rise .34s var(--e-dec) backwards}
+@media (prefers-reduced-motion:reduce){html.pg-in-f body,html.pg-in-b body,body.pg-out-f,body.pg-out-b{animation:none!important}.go .rise{animation:none!important}.view.entering,.view.leaving{animation:none!important}}

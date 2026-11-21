@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.istighfar.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.istighfar.app'
+        minSdk 26
+        targetSdk 34
+        // every GitHub build gets a higher versionCode (offset + run number) so in-app updates install over it
+        versionCode 100 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
+        versionName '3.1'
+    }
+
+    signingConfigs {
+        main {
+            storeFile file('istighfar.keystore')
+            storePassword 'istighfar'
+            keyAlias 'istighfar'
+            keyPassword 'istighfar'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.main
+        }
+        release {
+            signingConfig signingConfigs.main
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
